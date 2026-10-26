@@ -6,7 +6,7 @@ static ct_t vec[NUM_INPUTS];
 static uint32_t min_cycles, max_cycles;
 
 // Runs one SE op and records how many cycles it took.
-static void timed_op(int op, const ct_t *a, const ct_t *b, const ct_t *c, ct_t *r)
+__attribute__((noinline)) static void timed_op(int op, const ct_t *a, const ct_t *b, const ct_t *c, ct_t *r)
 {
   uint32_t t = se_cycles();
   se_op(op, a, b, c, r);
@@ -45,7 +45,7 @@ void main(void)
   for (int i = 0; i < NUM_INPUTS - 1; i++)
     for (int j = 0; j < NUM_INPUTS - 1 - i; j++)
     {
-      timed_op(SE_LT, &vec[j + 1], &vec[j], 0, &gt);
+      timed_op(SE_LT, &vec[j + 1], &vec[j], &vec[j], &gt);
       timed_op(SE_CMOV, &vec[j + 1], &vec[j], &gt, &lo);
       timed_op(SE_CMOV, &vec[j], &vec[j + 1], &gt, &hi);
       ct_copy(&vec[j], &lo);

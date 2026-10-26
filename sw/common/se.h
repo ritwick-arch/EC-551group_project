@@ -34,7 +34,7 @@ static inline void ct_copy(ct_t *dst, const ct_t *src)
     dst->w[i] = src->w[i];
 }
 
-// r = op(a, b); for SE_CMOV, r = c ? a : b.
+// r = op(a, b); for SE_CMOV, r = c ? a : b. Always pass c so every op runs the same code.
 static inline void se_op(int op, const ct_t *a, const ct_t *b, const ct_t *c, ct_t *r)
 {
   volatile uint32_t *se = SE_BASE;
@@ -42,7 +42,7 @@ static inline void se_op(int op, const ct_t *a, const ct_t *b, const ct_t *c, ct
   {
     se[i] = a->w[i];
     se[4 + i] = b->w[i];
-    se[8 + i] = c ? c->w[i] : 0;
+    se[8 + i] = c->w[i];
   }
   se[16] = op;
   while (se[17] & 1)
