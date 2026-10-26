@@ -8,3 +8,7 @@ vivado/
 # Local build output and notes
 build/
 docs/
+
+# Python caches
+__pycache__/
+.pytest_cache/
