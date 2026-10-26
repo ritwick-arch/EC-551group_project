@@ -29,6 +29,44 @@ def write_header(values, path, name):
         f.write("\n".join(lines) + "\n")
 
 
+def auction_payload(bids):
+    lines = [str(len(bids))]
+    for bidder, bid in enumerate(bids, start=1):
+        lines += [ct_hex(se.encrypt(bid)), ct_hex(se.encrypt(bidder))]
+    return ("\n".join(lines) + "\n").encode()
+
+
+def report_auction(lines):
+    found = {}
+    for line in lines:
+        parts = line.split()
+        if len(parts) == 2 and parts[0] in ("winner", "price") and HEX_CT.fullmatch(parts[1]):
+            found[parts[0]] = se.decrypt(int(parts[1], 16))
+    if len(found) == 2:
+        print(f"\nData owner decrypts: bidder {found['winner']} wins at {found['price']}")
+    else:
+        print("\nNo winner/price lines found")
+
+
+def run_auction(bids, port, baud):
+    import serial  # pyserial, only needed for the live board
+
+    with serial.Serial(port, baud, timeout=1) as s:
+        print("Press CPU RESET on the board...")
+        while b"ready" not in s.readline():
+            pass
+        s.write(auction_payload(bids))
+        lines = []
+        while True:
+            line = s.readline().decode(errors="replace").strip()
+            if line:
+                print(line)
+                lines.append(line)
+            if line == "done":
+                break
+    report_auction(lines)
+
+
 def main():
     p = argparse.ArgumentParser(description="SE data-owner tool")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -41,6 +79,13 @@ def main():
     d = sub.add_parser("decrypt", help="decrypt every 32-hex-digit ciphertext in the text")
     d.add_argument("cts", nargs="*", help="ciphertexts; reads stdin when empty")
     d.add_argument("-f", "--file")
+    a = sub.add_parser("auction", help="run the sealed-bid auction; bidder i gets the i-th bid")
+    a.add_argument("bids", type=int, nargs="+")
+    a.add_argument("--port", help="board serial port, e.g. COM5 or /dev/ttyUSB1")
+    a.add_argument("--baud", type=int, default=9600)
+    a.add_argument("--save", help="write the encrypted bids to a file instead (for simulation)")
+    r = sub.add_parser("auction-result", help="decrypt winner and price from a saved board log")
+    r.add_argument("file")
     args = p.parse_args()
 
     if args.cmd == "encrypt":
@@ -58,6 +103,16 @@ def main():
             if cts:
                 plain = " ".join(str(se.decrypt(int(c, 16))) for c in cts)
                 print(f"{line.strip()}  ->  {plain}")
+    elif args.cmd == "auction":
+        if args.save:
+            with open(args.save, "wb") as f:
+                f.write(auction_payload(args.bids))
+        elif args.port:
+            run_auction(args.bids, args.port, args.baud)
+        else:
+            p.error("auction needs --port or --save")
+    elif args.cmd == "auction-result":
+        report_auction(open(args.file).read().splitlines())
 
 
 if __name__ == "__main__":
