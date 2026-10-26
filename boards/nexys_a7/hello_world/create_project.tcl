@@ -1,0 +1,11 @@
+# Run from the Vivado Tcl console: source create_project.tcl
+cd [file normalize [file dirname [info script]]]
+create_project hello_world_nexys_a7 ./vivado -part xc7a100tcsg324-1 -force
+set_property simulator_language Verilog [current_project]
+
+add_files -fileset constrs_1 -norecurse { ./hello_world_nexys_a7.xdc }
+add_files -norecurse { ./hello_world_nexys_a7.v }
+add_files -norecurse [glob ../../../rvx/hardware/rvx*.v]
+add_files -norecurse { ./hello_world.hex }
+set_property file_type {Memory Initialization Files} [get_files ./hello_world.hex]
+set_property top hello_world_nexys_a7 [current_fileset]
