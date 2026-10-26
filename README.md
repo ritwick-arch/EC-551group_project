@@ -9,3 +9,6 @@ Sequestered Encryption
 3. Generate Bitstream, then program the board from Hardware Manager.
 4. Open a serial terminal on the board's COM port at 9600 baud, 8N1.
 5. Press CPU RESET: the terminal prints `Hello World from RVX!`
+
+For the sort demo, source `boards/nexys_a7/sort/create_project.tcl` instead; after reset the
+terminal prints the 16-element vector before and after sorting.
