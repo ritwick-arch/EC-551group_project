@@ -1,0 +1,10 @@
+# Vivado project and run outputs
+vivado/
+.Xil/
+*.jou
+*.log
+*.str
+
+# Local build output and notes
+build/
+docs/
