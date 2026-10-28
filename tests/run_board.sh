@@ -1,9 +1,11 @@
 #!/bin/bash
-# Usage: tests/run_board.sh <app> [uart input file]   e.g. tests/run_board.sh enc_sort
-# Simulates boards/nexys_a7/<app> and prints what the board would send over UART.
+# Usage: [BAUD=115200] tests/run_board.sh <app> [uart input file | --pty]   e.g. tests/run_board.sh auction bids.txt
+# Simulates boards/nexys_a7/<app> and prints what the board would send over UART, or with --pty
+# bridges the board's UART to a pseudo-terminal that host/owner.py can open like a serial port.
 set -e
 APP=$1
-IN=${2:+$(realpath "$2")}
+IN=$2
+[ -n "$IN" ] && [ "$IN" != --pty ] && IN=$(realpath "$IN")
 VROOT=${VERILATOR_ROOT:-/share/pkg.7/verilator/4.108/install/share/verilator}
 VBIN=${VERILATOR_BIN:-/share/pkg.7/verilator/4.108/install/bin/verilator_bin}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
