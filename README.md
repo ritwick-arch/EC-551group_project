@@ -21,19 +21,32 @@ re-encrypts the result with a fresh salt. The RISC-V program only ever handles c
 Ops: ADD, SUB, MUL, LT, EQ, CMOV (`sw/common/se.h`). The data owner's side is
 `host/owner.py`, built on the Python reference model `host/se.py`.
 
-**Encrypted sort** (`boards/nexys_a7/enc_sort`): program the board as above and press
-CPU RESET. The terminal shows the 16 input ciphertexts, the 16 sorted ciphertexts, and
-the cycle count of every SE op (min equals max). Save the terminal text to a file, then
-`python host/owner.py decrypt -f log.txt` shows the plaintext values in sorted order.
+**Encrypted sort** (`boards/nexys_a7/enc_sort`): an interactive demo that sorts the same
+numbers twice while showing the element slots as they sit in board RAM (`0x1800`, one
+16-byte slot per element). Program the board, close any serial terminal, then on the laptop
+(`pip install pyserial`): `python host/owner.py demo --port COM5`. It asks for 2 to 16
+numbers, then press Enter for each compare-and-swap step or `a` to auto-play
+(`--auto 0.5` auto-plays from the start).
+1. Plaintext mode: the slots hold the numbers in the clear, and step timing depends on
+   whether elements swapped.
+2. SE mode: the laptop encrypts the numbers (equal numbers get different ciphertexts), and
+   the same slots only ever hold ciphertext. Both compared slots are rewritten at every step,
+   so memory does not even show whether a swap happened, and every step takes the same
+   number of cycles. The laptop's last column decrypts the slots with the key to show the
+   sort progressing.
+3. After each mode, the whole 8 KB of RAM is dumped and searched for the numbers (and, in SE
+   mode, for the key), and the SE unit's operand registers are read back (always zero).
+
+The board talks at 115200 baud and also answers typed commands: `load plain N` / `load se N`
+followed by N values or ciphertexts, `step`, `show`, `dump`, `peek <hex address>`.
 
 **Sealed-bid auction** (`boards/nexys_a7/auction`): program the board, close any serial
 terminal, then on the laptop (`pip install pyserial`):
 `python host/owner.py auction --port COM5 120 340 275` and press CPU RESET when asked.
 It prints what the board sees (ciphertext only), then e.g. `bidder 2 wins at 340`.
 
-**New encrypted inputs** (on SCC, with the RISC-V GCC):
+**Rebuilding firmware** (on SCC, with the RISC-V GCC), e.g. for enc_sort:
 ```
-python3 host/owner.py header 29 -3 17 8 -o sw/enc_sort/inputs.h
 cmake -S sw/enc_sort -B build/enc_sort -DTOOLCHAIN_PREFIX=<gcc dir>/bin/riscv-none-elf-
 make -C build/enc_sort && cp build/enc_sort/enc_sort.hex boards/nexys_a7/enc_sort/
 ```
@@ -43,10 +56,12 @@ make -C build/enc_sort && cp build/enc_sort/enc_sort.hex boards/nexys_a7/enc_sor
 python3 -m pytest host
 tests/run.sh simon128_tb tests/simon128_tb.v hw/simon128.v
 python3 tests/gen_se_vectors.py && tests/run.sh se_unit_tb tests/se_unit_tb.v hw/se_unit.v hw/simon128.v
-tests/run_board.sh enc_sort | python3 host/owner.py decrypt
+tests/run_demo.sh 31337 -4242 999 4242
 python3 host/owner.py auction 120 340 275 --save build/sim/bids.txt
 tests/run_board.sh auction build/sim/bids.txt > build/sim/auction.log && python3 host/owner.py auction-result build/sim/auction.log
 ```
+
+The SE boards run RVX at 25 MHz; at 50 MHz the SE unit's bus decode missed timing.
 
 **Limitations:** the key is a fixed constant (`KEY` in `hw/se_unit.v` and `host/se.py`), so
 anyone with the bitstream can extract it; key exchange is the stretch goal. Salts come from
