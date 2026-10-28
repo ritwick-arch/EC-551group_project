@@ -6,56 +6,16 @@
 static ct_t bids[MAX_BIDDERS], ids[MAX_BIDDERS];
 static char line[40];
 
-static void read_line(void)
-{
-  int n = 0;
-  for (;;)
-  {
-    while (!uart_data_received(UART))
-      ;
-    char ch = uart_read(UART);
-    if (ch == '\n')
-      break;
-    if (ch != '\r' && n < (int)sizeof(line) - 1)
-      line[n++] = ch;
-  }
-  line[n] = '\0';
-}
-
-static uint32_t hex_digit(char ch)
-{
-  if (ch >= '0' && ch <= '9')
-    return ch - '0';
-  if (ch >= 'a' && ch <= 'f')
-    return ch - 'a' + 10;
-  if (ch >= 'A' && ch <= 'F')
-    return ch - 'A' + 10;
-  return 0;
-}
-
-// Parses 32 hex digits, most significant word first, as printed by host/owner.py.
-static void parse_ct(ct_t *c)
-{
-  for (int i = 0; i < 4; i++)
-  {
-    uint32_t w = 0;
-    for (int k = 0; k < 8; k++)
-      w = (w << 4) | hex_digit(line[8 * i + k]);
-    c->w[3 - i] = w;
-  }
-}
-
 void main(void)
 {
   ct_t best, winner, gt, t;
-  int n = 0;
+  int n;
 
   print_str("Sealed-bid auction\r\nready\r\n");
 
   // Protocol: number of bidders (public), then each bidder's encrypted bid and id.
-  read_line();
-  for (char *p = line; *p >= '0' && *p <= '9'; p++)
-    n = n * 10 + (*p - '0');
+  read_line(line, sizeof line);
+  n = parse_int(line);
   if (n < 1 || n > MAX_BIDDERS)
   {
     print_str("bad bidder count\r\ndone\r\n");
@@ -63,10 +23,10 @@ void main(void)
   }
   for (int i = 0; i < n; i++)
   {
-    read_line();
-    parse_ct(&bids[i]);
-    read_line();
-    parse_ct(&ids[i]);
+    read_line(line, sizeof line);
+    parse_ct(line, &bids[i]);
+    read_line(line, sizeof line);
+    parse_ct(line, &ids[i]);
   }
 
   for (int i = 0; i < n; i++)
