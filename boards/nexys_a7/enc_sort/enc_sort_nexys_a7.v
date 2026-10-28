@@ -5,20 +5,21 @@ module enc_sort_nexys_a7 (
   output wire uart_tx
   );
 
-  // Divide the 100 MHz board clock down to 50 MHz.
-  reg clock_50mhz;
-  initial clock_50mhz = 1'b0;
-  always @(posedge clock) clock_50mhz <= !clock_50mhz;
+  // Divide the 100 MHz board clock down to 25 MHz, which leaves timing slack for the SE unit.
+  reg [1:0] clock_div;
+  initial clock_div = 2'd0;
+  always @(posedge clock) clock_div <= clock_div + 2'd1;
+  wire clock_25mhz = clock_div[1];
 
   // CPU_RESETN is active-low, RVX expects an active-high reset.
   reg reset;
-  always @(posedge clock_50mhz) reset <= !cpu_resetn;
+  always @(posedge clock_25mhz) reset <= !cpu_resetn;
 
   rvx_se #(
-    .CLOCK_FREQUENCY  (50000000         ),
+    .CLOCK_FREQUENCY  (25000000         ),
     .MEMORY_INIT_FILE ("enc_sort.hex"   )
   ) rvx_instance (
-    .clock            (clock_50mhz      ),
+    .clock            (clock_25mhz      ),
     .reset            (reset            ),
     .halt             (1'b0             ),
     .uart_rx          (uart_rx          ),
