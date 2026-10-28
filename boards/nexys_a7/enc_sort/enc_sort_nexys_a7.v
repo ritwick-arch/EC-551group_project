@@ -17,6 +17,7 @@ module enc_sort_nexys_a7 (
 
   rvx_se #(
     .CLOCK_FREQUENCY  (25000000         ),
+    .UART_BAUD_RATE   (115200           ),
     .MEMORY_INIT_FILE ("enc_sort.hex"   )
   ) rvx_instance (
     .clock            (clock_25mhz      ),

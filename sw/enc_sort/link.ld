@@ -91,6 +91,12 @@ SECTIONS
     . = ALIGN(4);
   } > RAM :data
 
+  /* The sort's elements, at a fixed address so the demo can show them in memory. */
+  .vec 0x1800 (NOLOAD) : ALIGN(4)
+  {
+    KEEP(*(.vec))
+  } > RAM :data
+
   /DISCARD/ :
   {
     *(.comment)
