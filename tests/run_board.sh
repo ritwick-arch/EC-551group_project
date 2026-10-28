@@ -18,4 +18,4 @@ mkdir -p "$OUT"
   -CFLAGS "-DVTOP=V$TOP -DVTOP_H=\\\"V$TOP.h\\\" -include limits" \
   "$BOARD/$TOP.v" "$ROOT"/rvx/hardware/rvx_*.v "$ROOT"/hw/*.v "$ROOT/tests/board_sim.cpp" > /dev/null
 make -s -j8 -C "$OUT" -f "V$TOP.mk" "V$TOP" > /dev/null
-cd "$BOARD" && "$OUT/V$TOP" $IN
+cd "$BOARD" && exec "$OUT/V$TOP" $IN

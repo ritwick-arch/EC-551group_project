@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
       if (tx_bit < 0) { top.uart_rx = 0; tx_bit = 0; }
       else if (tx_bit < 8) { top.uart_rx = (b >> tx_bit) & 1; ++tx_bit; }
       else if (tx_bit == 8) { top.uart_rx = 1; ++tx_bit; }
-      else { tx_bit = -1; ++tx_pos; tx_next = cyc + (long)(2 * bit); continue; }
+      else { tx_bit = -1; ++tx_pos; tx_next = cyc; continue; }
       tx_next = cyc + (long)bit;
     }
   }
