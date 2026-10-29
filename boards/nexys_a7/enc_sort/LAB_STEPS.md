@@ -40,6 +40,7 @@ positive. If WNS is negative, stop and send the number.
 Plug in the USB cable and turn the board on.
 
 ```tcl
+catch {set_param labtools.enable_cs_server false}
 open_hw_manager
 connect_hw_server
 open_hw_target
@@ -50,6 +51,8 @@ program_hw_devices $dev
 ```
 
 The DONE LED lights up. If `connect_hw_server` says it is already connected, skip that line.
+The `set_param` line avoids "Labtools 27-3733 Error during cs_server initialization" on
+Vivado 2025.1; if the hardware manager was already open, run `close_hw_manager` first.
 
 ## 4. Find the board's COM port (PowerShell)
 
@@ -57,7 +60,8 @@ The DONE LED lights up. If `connect_hw_server` says it is already connected, ski
 [System.IO.Ports.SerialPort]::GetPortNames()
 ```
 
-If several ports show up, unplug the board, run it again, and see which one disappeared.
+If several ports show up, unplug the board, run it again, and see which one disappeared. In
+Device Manager the board is the FTDI "USB Serial Port"; Bluetooth adds ports that are not it.
 
 ## 5. Run the demo (PowerShell, in the repo folder)
 
