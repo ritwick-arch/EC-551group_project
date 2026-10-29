@@ -21,7 +21,7 @@ re-encrypts the result with a fresh salt. The RISC-V program only ever handles c
 Ops: ADD, SUB, MUL, LT, EQ, CMOV (`sw/common/se.h`). The data owner's side is
 `host/owner.py`, built on the Python reference model `host/se.py`.
 
-**Encrypted sort** (`boards/nexys_a7/enc_sort`): an interactive demo that sorts the same
+**Encrypted sort** (`boards/nexys_a7/enc_sort`, lab commands in `LAB_STEPS.md` there): an interactive demo that sorts the same
 numbers twice while showing the element slots as they sit in board RAM (`0x1800`, one
 16-byte slot per element). Program the board, close any serial terminal, then on the laptop
 (`pip install pyserial`): `python host/owner.py demo --port COM5`. It asks for 2 to 16
