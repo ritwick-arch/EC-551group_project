@@ -55,23 +55,39 @@ def run_auction(bids, port, baud):
 class Board:
     """Line-based link to the enc_sort demo firmware; every reply ends with "ok"."""
 
-    def __init__(self, port, baud):
+    def __init__(self, port, baud, idle_timeout=None):
+        """idle_timeout: give up after this many seconds of silence (None = wait forever)."""
         import serial  # pyserial, only needed for the live board
 
         self.s = serial.Serial(port, baud, timeout=1)
+        self.idle_timeout = idle_timeout
 
-    def sync(self):
+    def close(self):
+        self.s.close()
+
+    def sync(self, timeout=None):
+        """Waits for the firmware's "ready"; with a timeout, raises TimeoutError instead of waiting forever."""
         print("Waiting for the board (press CPU RESET if nothing happens)...")
+        self.s.reset_input_buffer()  # drop replies left over from an earlier, interrupted command
+        deadline = None if timeout is None else time.monotonic() + timeout
         while True:
             self.s.write(b"\n")
             if b"ready" in self.s.readline():
                 return
+            if deadline is not None and time.monotonic() > deadline:
+                raise TimeoutError("the board did not answer \"ready\"")
 
     def cmd(self, line, data=()):
         self.s.write("".join(f"{x}\n" for x in (line, *data)).encode())
         out = []
+        last_heard = time.monotonic()
         while True:
-            reply = self.s.readline().decode(errors="replace").strip()
+            raw = self.s.readline()
+            if raw:
+                last_heard = time.monotonic()
+            elif self.idle_timeout is not None and time.monotonic() - last_heard > self.idle_timeout:
+                raise TimeoutError(f"the board stopped answering during \"{line}\"")
+            reply = raw.decode(errors="replace").strip()
             if reply == "ok":
                 return out
             if reply and reply != "ready":
